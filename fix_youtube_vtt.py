@@ -22,19 +22,19 @@ def test_timestamp_line(line: str) -> bool:
 
 def fix_vtt(subs_path) -> str:
     raw_file = subs_path.read_text()
-    # Find all timestamp and make a list with only the lines with
+    # Find all timestamps and make a list with only the lines with
     # timestamp_difference != 10 ms
-    timestamps = re.findall(r'\d+.*%', raw_file)
+    timestamps = re.findall(r'\d+:\d+:\d+.*%', raw_file)
     timestamps = [line for line in timestamps if test_timestamp_line(line)]
     # Find the first bulk of text after a timestamp
     # Use double space as a delimiter for the individual lines
     subs = re.search(r'%\n \n(.*)', raw_file)
     subs = subs[1].split('  ')
-    # Remove everything within tags "<...>"
+    # Remove everything within angle brackets "<...>"
     subs = [re.sub('<.*?>', '', line) for line in subs]
     assert len(timestamps) == len(
         subs), 'Length of timestamps and lines with subs should be equal'
-    # Generate new vtt
+    # Generate new vtt, doesn't include the first few lines with metadata
     new_subs = ''.join([f"{ts}\n{line}\n\n" for ts,
                        line in zip(timestamps, subs)])
     return new_subs
@@ -45,6 +45,10 @@ def fix_vtt(subs_path) -> str:
 
 
 def get_path_fixed(subs_raw_path):
+    '''
+    Takes a pathlib object as input and adds '_fixed' before the suffixes.
+    Returns a new pathlib object.
+    '''
     suffix_str = ''.join(subs_raw_path.suffixes)
     new_title = subs_raw_path.name[:-
                                    len(suffix_str)] + '_fixed' + suffix_str
@@ -60,7 +64,7 @@ def main():
     new_subs = fix_vtt(subs_raw_path)
     new_path = get_path_fixed(subs_raw_path)
     new_path.write_text(new_subs)
-    # print(new_subs)
+    print(new_subs)
 
 
 if __name__ == '__main__':
